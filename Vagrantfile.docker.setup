@@ -1,0 +1,37 @@
+#### Entorno  ####
+# Requerimientos Ubuntu/Docker/Docker Compose/Git
+#### 
+
+Vagrant.configure(2) do |config|
+	config.vm.box = "ubuntu/trusty64"
+	config.vm.box_check_update = 'false'
+	config.vm.network "private_network", ip: "172.16.10.25"
+	config.vm.network "forwarded_port", guest: 80, host: 8881
+	config.vm.provision "shell", inline:<<-SHELL
+		ssh-keygen -t rsa -f /home/vagrant/.ssh/id_rsa -q -P ""
+        	sudo apt-get remove --purge docker docker-engine -y
+        	sudo apt-get update
+        	sudo apt-get -y install \
+        		linux-image-extra-$(uname -r) \
+        		linux-image-extra-virtual
+
+        	sudo apt-get install apt-transport-https ca-certificates curl software-properties-common -y
+        	sudo wget -qO - https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+        	sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+        	sudo apt-get update
+        	sudo apt-get install git docker-ce -y
+        	sudo apt-get -y install python-pip
+        	sudo pip install docker-compose
+        	sudo mkdir -p /home/vagrant/proyectos
+		sudo chown -R vagrant.vagrant /home/vagrant/.ssh/*
+		sudo chown -R vagrant.vagrant /home/vagrant/proyectos
+		eval $(ssh-agent)
+		ssh-add /home/vagrant/.ssh/id_rsa
+		echo "Copy an paste the following key as your bitbucket ssh auth"
+		cat /home/vagrant/.ssh/id_rsa.pub
+		sleep 30
+		GIT_SSH_COMMAND='ssh -i /home/vagrant/.ssh/id_rsa' sudo git clone \
+			git@bitbucket.org:123developers/dockerize.git /home/vagrant/proyectos
+		git config core.sshCommand 'ssh -i /home/vagrant/.ssh/id_rsa'
+	SHELL
+end
